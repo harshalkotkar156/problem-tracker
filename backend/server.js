@@ -17,6 +17,7 @@ app.use(express.json());
 
 // API Routes
 app.use("/api/problems", require("./routes/problemRoutes"));
+app.use("/api/notes", require("./routes/noteRoutes"));
 
 // ---------- Production: Serve Frontend Static Files ----------
 // if (process.env.NODE_ENV === "production") {

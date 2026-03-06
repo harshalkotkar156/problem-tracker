@@ -44,6 +44,16 @@ function Navbar() {
               Dashboard
             </Link>
             <Link
+              to="/notes"
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                isActive("/notes")
+                  ? "bg-teal-500/20 text-teal-300 shadow-inner"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+              }`}
+            >
+              Notes
+            </Link>
+            <Link
               to="/add"
               className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-1.5 ${
                 isActive("/add")
@@ -65,6 +75,29 @@ function Navbar() {
                 />
               </svg>
               Add Problem
+            </Link>
+            <Link
+              to="/add-note"
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-1.5 ${
+                isActive("/add-note")
+                  ? "bg-teal-500/20 text-teal-300 shadow-inner"
+                  : "bg-gradient-to-r from-teal-600 to-emerald-600 text-white hover:from-teal-500 hover:to-emerald-500 shadow-lg shadow-teal-500/25"
+              }`}
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              Add Note
             </Link>
           </div>
         </div>

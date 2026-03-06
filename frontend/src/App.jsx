@@ -4,6 +4,9 @@ import Navbar from "./components/Navbar.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import AddProblem from "./pages/AddProblem.jsx";
 import ProblemDetail from "./pages/ProblemDetail.jsx";
+import Notes from "./pages/Notes.jsx";
+import AddNote from "./pages/AddNote.jsx";
+import NoteDetail from "./pages/NoteDetail.jsx";
 
 function App() {
   return (
@@ -33,6 +36,9 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/add" element={<AddProblem />} />
           <Route path="/problem/:id" element={<ProblemDetail />} />
+          <Route path="/notes" element={<Notes />} />
+          <Route path="/add-note" element={<AddNote />} />
+          <Route path="/note/:id" element={<NoteDetail />} />
         </Routes>
       </main>
     </div>

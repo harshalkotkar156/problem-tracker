@@ -30,3 +30,30 @@ export const deleteProblem = async (id) => {
   const response = await API.delete(`/problems/${id}`);
   return response.data;
 };
+
+// ---- Notes API ----
+
+export const fetchNotes = async (params = {}) => {
+  const response = await API.get("/notes", { params });
+  return response.data;
+};
+
+export const fetchNoteById = async (id) => {
+  const response = await API.get(`/notes/${id}`);
+  return response.data;
+};
+
+export const createNote = async (data) => {
+  const response = await API.post("/notes", data);
+  return response.data;
+};
+
+export const updateNote = async (id, data) => {
+  const response = await API.put(`/notes/${id}`, data);
+  return response.data;
+};
+
+export const deleteNote = async (id) => {
+  const response = await API.delete(`/notes/${id}`);
+  return response.data;
+};
