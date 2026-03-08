@@ -23,7 +23,9 @@ export const topics = [
   "Union Find",
   "Monotonic Stack",
   "Prefix Sum",
+  "P&C",
   "Matrix",
   "Simulation",
   "Design",
+  "Moore Algorithm",
 ];
