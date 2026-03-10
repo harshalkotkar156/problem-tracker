@@ -1,6 +1,4 @@
-import { Link } from "react-router-dom";
-
-function NoteCard({ note, onTogglePin }) {
+function NoteCard({ note, onTogglePin, onClick }) {
   const formattedDate = new Date(note.createdAt).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -23,7 +21,10 @@ function NoteCard({ note, onTogglePin }) {
     : "";
 
   return (
-    <div className="glass glass-hover rounded-2xl p-4 transition-all duration-300 group hover:shadow-lg hover:shadow-teal-500/10">
+    <div
+      className="glass glass-hover rounded-2xl p-4 transition-all duration-300 group hover:shadow-lg hover:shadow-teal-500/10 cursor-pointer"
+      onClick={() => onClick?.(note)}
+    >
       <div className="flex items-start gap-4">
         {/* Pin Button */}
         <button
@@ -47,7 +48,7 @@ function NoteCard({ note, onTogglePin }) {
         </button>
 
         {/* Content */}
-        <Link to={`/note/${note._id}`} className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0">
           <h3 className="text-sm font-semibold text-slate-100 truncate group-hover:text-teal-300 transition-colors">
             {note.title}
           </h3>
@@ -56,7 +57,7 @@ function NoteCard({ note, onTogglePin }) {
               {preview}...
             </p>
           )}
-        </Link>
+        </div>
 
         {/* Tags */}
         <div className="hidden md:flex flex-shrink-0 items-center gap-1.5 max-w-[240px]">
@@ -89,7 +90,7 @@ function NoteCard({ note, onTogglePin }) {
         </span>
 
         {/* Arrow */}
-        <Link to={`/note/${note._id}`} className="flex-shrink-0">
+        <div className="flex-shrink-0">
           <svg
             className="w-4 h-4 text-slate-600 group-hover:text-teal-400 transition-colors"
             fill="none"
@@ -98,7 +99,7 @@ function NoteCard({ note, onTogglePin }) {
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
-        </Link>
+        </div>
       </div>
 
       {/* Mobile: Tags row */}

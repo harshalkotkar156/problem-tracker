@@ -26,6 +26,37 @@ function AddNote() {
     setForm((prev) => ({ ...prev, tags: newTags }));
   };
 
+  const handleContentKeyDown = (e) => {
+    if (e.key === "Enter") {
+      const textarea = e.target;
+      const { selectionStart, value } = textarea;
+      const currentLineStart = value.lastIndexOf("\n", selectionStart - 1) + 1;
+      const currentLine = value.slice(currentLineStart, selectionStart);
+
+      if (currentLine === "- ") {
+        // Empty bullet point — remove it
+        e.preventDefault();
+        const before = value.slice(0, currentLineStart);
+        const after = value.slice(selectionStart);
+        const newValue = before + after;
+        setForm((prev) => ({ ...prev, content: newValue }));
+        setTimeout(() => {
+          textarea.selectionStart = textarea.selectionEnd = currentLineStart;
+        }, 0);
+      } else if (currentLine.match(/^- .+/)) {
+        // Line has content after "- ", add a new bullet
+        e.preventDefault();
+        const before = value.slice(0, selectionStart);
+        const after = value.slice(selectionStart);
+        const newValue = before + "\n- " + after;
+        setForm((prev) => ({ ...prev, content: newValue }));
+        setTimeout(() => {
+          textarea.selectionStart = textarea.selectionEnd = selectionStart + 3;
+        }, 0);
+      }
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.title.trim()) {
@@ -157,6 +188,7 @@ function AddNote() {
                 name="content"
                 value={form.content}
                 onChange={handleChange}
+                onKeyDown={handleContentKeyDown}
                 rows={16}
                 placeholder={`# My Notes\n\n## Key Points\n- Point one\n- Point two\n\n## Code Example\n\`\`\`js\nconst x = 42;\n\`\`\`\n\nWrite in **Markdown** format...`}
                 className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500/50 focus:ring-1 focus:ring-teal-500/25 transition-colors resize-none font-mono leading-relaxed"
