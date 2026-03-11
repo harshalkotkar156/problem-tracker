@@ -42,6 +42,35 @@ function AddProblem() {
     setForm((prev) => ({ ...prev, topics: newTopics }));
   };
 
+  const handleBulletKeyDown = (e) => {
+    if (e.key === "Enter") {
+      const textarea = e.target;
+      const { selectionStart, value } = textarea;
+      const currentLineStart = value.lastIndexOf("\n", selectionStart - 1) + 1;
+      const currentLine = value.slice(currentLineStart, selectionStart);
+
+      if (currentLine === "- ") {
+        e.preventDefault();
+        const before = value.slice(0, currentLineStart);
+        const after = value.slice(selectionStart);
+        const newValue = before + after;
+        setForm((prev) => ({ ...prev, [textarea.name]: newValue }));
+        setTimeout(() => {
+          textarea.selectionStart = textarea.selectionEnd = currentLineStart;
+        }, 0);
+      } else if (currentLine.match(/^- .+/)) {
+        e.preventDefault();
+        const before = value.slice(0, selectionStart);
+        const after = value.slice(selectionStart);
+        const newValue = before + "\n- " + after;
+        setForm((prev) => ({ ...prev, [textarea.name]: newValue }));
+        setTimeout(() => {
+          textarea.selectionStart = textarea.selectionEnd = selectionStart + 3;
+        }, 0);
+      }
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.name.trim()) {
@@ -174,6 +203,7 @@ function AddProblem() {
               name="intuition"
               value={form.intuition}
               onChange={handleChange}
+              onKeyDown={handleBulletKeyDown}
               rows={2}
               placeholder="What was the key insight?"
               className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/25 transition-colors resize-none overflow-hidden"
@@ -191,6 +221,7 @@ function AddProblem() {
               name="approach"
               value={form.approach}
               onChange={handleChange}
+              onKeyDown={handleBulletKeyDown}
               rows={2}
               placeholder="Describe your approach..."
               className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/25 transition-colors resize-none overflow-hidden"
@@ -208,6 +239,7 @@ function AddProblem() {
               name="notes"
               value={form.notes}
               onChange={handleChange}
+              onKeyDown={handleBulletKeyDown}
               rows={3}
               placeholder="Any additional notes..."
               className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/25 transition-colors resize-none overflow-hidden"

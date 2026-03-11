@@ -1,13 +1,14 @@
-import { Link } from "react-router-dom";
-
-function ProblemCard({ problem, onToggleImportant, onOpenNotes }) {
+function ProblemCard({ problem, onToggleImportant, onOpenNotes, onClick }) {
   const formattedDate = new Date(problem.createdAt).toLocaleDateString(
     "en-US",
     { month: "short", day: "numeric", year: "numeric" }
   );
 
   return (
-    <div className="glass glass-hover rounded-2xl p-4 transition-all duration-300 group hover:shadow-lg hover:shadow-violet-500/10">
+    <div
+      className="glass glass-hover rounded-2xl p-4 transition-all duration-300 group hover:shadow-lg hover:shadow-violet-500/10 cursor-pointer"
+      onClick={() => onClick?.(problem)}
+    >
       <div className="flex items-center gap-4">
         {/* Important Star */}
         <button
@@ -41,12 +42,12 @@ function ProblemCard({ problem, onToggleImportant, onOpenNotes }) {
           )}
         </div>
 
-        {/* Name - clickable to detail */}
-        <Link to={`/problem/${problem._id}`} className="flex-1 min-w-0">
+        {/* Name */}
+        <div className="flex-1 min-w-0">
           <h3 className="text-sm font-semibold text-slate-100 truncate group-hover:text-violet-300 transition-colors">
             {problem.name}
           </h3>
-        </Link>
+        </div>
 
         {/* Topics */}
         <div className="hidden md:flex flex-shrink-0 items-center gap-1.5 max-w-[240px]">
@@ -123,14 +124,14 @@ function ProblemCard({ problem, onToggleImportant, onOpenNotes }) {
         </span>
 
         {/* Arrow */}
-        <Link to={`/problem/${problem._id}`} className="flex-shrink-0">
+        <div className="flex-shrink-0">
           <svg
             className="w-4 h-4 text-slate-600 group-hover:text-violet-400 transition-colors"
             fill="none" stroke="currentColor" viewBox="0 0 24 24"
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
-        </Link>
+        </div>
       </div>
 
       {/* Mobile: Topics + Links row */}
