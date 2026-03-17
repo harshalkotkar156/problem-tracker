@@ -7,6 +7,11 @@ const noteSchema = new mongoose.Schema(
       required: [true, "Note title is required"],
       trim: true,
     },
+    category: {
+      type: String,
+      trim: true,
+      default: "DSA",
+    },
     tags: {
       type: [String],
       default: [],

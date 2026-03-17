@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { createNote } from "../services/api";
 import TagInput from "../components/TagInput";
+import { noteCategories, defaultNoteCategory } from "../data/noteCategories";
 
 function AddNote() {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ function AddNote() {
 
   const [form, setForm] = useState({
     title: "",
+    category: defaultNoteCategory,
     tags: [],
     content: "",
     isPinned: false,
@@ -103,6 +105,25 @@ function AddNote() {
               placeholder="e.g. Binary Search Key Points"
               className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500/50 focus:ring-1 focus:ring-teal-500/25 transition-colors"
             />
+          </div>
+
+          {/* Tags */}
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1.5">
+              Category
+            </label>
+            <select
+              name="category"
+              value={form.category}
+              onChange={handleChange}
+              className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-teal-500/50 focus:ring-1 focus:ring-teal-500/25 transition-colors"
+            >
+              {noteCategories.map((category) => (
+                <option key={category} value={category} className="bg-slate-800">
+                  {category}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Tags */}

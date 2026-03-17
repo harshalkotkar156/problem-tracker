@@ -15,18 +15,42 @@ const createNote = async (req, res) => {
 // @route   GET /api/notes
 const getNotes = async (req, res) => {
   try {
-    const { search, tag, sort } = req.query;
-    const query = {};
+    const { search, tag, sort, category } = req.query;
+    const filters = [];
 
-    // Search by title (case-insensitive)
     if (search) {
-      query.title = { $regex: search, $options: "i" };
+      filters.push({
+        $or: [
+          { title: { $regex: search, $options: "i" } },
+          { content: { $regex: search, $options: "i" } },
+          {
+            tags: {
+              $elemMatch: { $regex: search, $options: "i" },
+            },
+          },
+        ],
+      });
     }
 
-    // Filter by tag
     if (tag) {
-      query.tags = { $in: [tag] };
+      filters.push({
+        tags: {
+          $elemMatch: { $regex: tag, $options: "i" },
+        },
+      });
     }
+
+    if (category && category !== "ALL") {
+      if (category === "DSA") {
+        filters.push({
+          $or: [{ category: "DSA" }, { category: { $exists: false } }],
+        });
+      } else {
+        filters.push({ category });
+      }
+    }
+
+    const query = filters.length ? { $and: filters } : {};
 
     // Sort: default latest first
     const sortOrder = sort === "oldest" ? { createdAt: 1 } : { createdAt: -1 };

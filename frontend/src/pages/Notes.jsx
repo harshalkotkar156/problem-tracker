@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -7,6 +7,7 @@ import { fetchNotes, updateNote } from "../services/api";
 import NoteCard from "../components/NoteCard";
 import Loader from "../components/Loader";
 import EmptyState from "../components/EmptyState";
+import { noteCategories, defaultNoteCategory } from "../data/noteCategories";
 
 function Notes() {
   const navigate = useNavigate();
@@ -14,8 +15,11 @@ function Notes() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
+  const [tagSearch, setTagSearch] = useState("");
   const [showPinnedOnly, setShowPinnedOnly] = useState(false);
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [debouncedTagSearch, setDebouncedTagSearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState(defaultNoteCategory);
   const [selectedNote, setSelectedNote] = useState(null);
 
   // Close modal on Escape key & lock body scroll
@@ -38,12 +42,19 @@ function Notes() {
     return () => clearTimeout(timer);
   }, [search]);
 
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedTagSearch(tagSearch), 300);
+    return () => clearTimeout(timer);
+  }, [tagSearch]);
+
   const loadNotes = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const params = {};
       if (debouncedSearch) params.search = debouncedSearch;
+      if (debouncedTagSearch) params.tag = debouncedTagSearch;
+      if (selectedCategory) params.category = selectedCategory;
       const data = await fetchNotes(params);
       setNotes(data);
     } catch (err) {
@@ -51,7 +62,7 @@ function Notes() {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch]);
+  }, [debouncedSearch, debouncedTagSearch, selectedCategory]);
 
   useEffect(() => {
     loadNotes();
@@ -82,107 +93,152 @@ function Notes() {
         </p>
       </div>
 
-      {/* Search & Filter Bar */}
-      <div className="glass rounded-2xl p-4 mb-8">
-        <div className="flex flex-col sm:flex-row gap-3">
-          {/* Search */}
-          <div className="flex-1 relative">
-            <svg
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-            <input
-              type="text"
-              placeholder="Search notes..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500/50 focus:ring-1 focus:ring-teal-500/25 transition-colors"
-            />
+      <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-6">
+        <aside className="glass rounded-2xl p-4 h-fit lg:sticky lg:top-24">
+          <h2 className="text-sm font-semibold text-slate-200 mb-3">Categories</h2>
+          <div className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-visible">
+            {["ALL", ...noteCategories].map((category) => (
+              <button
+                key={category}
+                onClick={() => setSelectedCategory(category)}
+                className={`px-3 py-2 rounded-lg text-sm text-left whitespace-nowrap transition-colors border ${
+                  selectedCategory === category
+                    ? "bg-teal-500/20 text-teal-300 border-teal-500/30"
+                    : "bg-white/5 text-slate-400 border-white/10 hover:text-slate-200 hover:bg-white/10"
+                }`}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+        </aside>
+
+        <div>
+          <div className="glass rounded-2xl p-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+              <div className="relative">
+                <svg
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Search notes..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500/50 focus:ring-1 focus:ring-teal-500/25 transition-colors"
+                />
+              </div>
+
+              <div className="relative">
+                <svg
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M7 7h10M7 12h6m-6 5h8"
+                  />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Search by tag..."
+                  value={tagSearch}
+                  onChange={(e) => setTagSearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500/50 focus:ring-1 focus:ring-teal-500/25 transition-colors"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => setShowPinnedOnly(!showPinnedOnly)}
+                className={`px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2 border transition-colors ${
+                  showPinnedOnly
+                    ? "bg-teal-500/15 border-teal-500/30 text-teal-400"
+                    : "bg-white/5 border-white/10 text-slate-400 hover:text-slate-200 hover:bg-white/10"
+                }`}
+              >
+                <svg className="w-4 h-4" fill={showPinnedOnly ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z" />
+                </svg>
+                Pinned
+              </button>
+
+              {(search || tagSearch || showPinnedOnly || selectedCategory !== defaultNoteCategory) && (
+                <button
+                  onClick={() => {
+                    setSearch("");
+                    setTagSearch("");
+                    setShowPinnedOnly(false);
+                    setSelectedCategory(defaultNoteCategory);
+                  }}
+                  className="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-200 bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
+                >
+                  Reset Filters
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* Pinned Toggle */}
-          <button
-            onClick={() => setShowPinnedOnly(!showPinnedOnly)}
-            className={`px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2 border transition-colors ${
-              showPinnedOnly
-                ? "bg-teal-500/15 border-teal-500/30 text-teal-400"
-                : "bg-white/5 border-white/10 text-slate-400 hover:text-slate-200 hover:bg-white/10"
-            }`}
-          >
-            <svg className="w-4 h-4" fill={showPinnedOnly ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z" />
-            </svg>
-            Pinned
-          </button>
+          {!loading && !error && (
+            <div className="flex items-center gap-4 mb-4">
+              <span className="text-sm text-slate-500">
+                {displayedNotes.length} note{displayedNotes.length !== 1 ? "s" : ""}
+                {selectedCategory !== "ALL" ? ` in ${selectedCategory}` : ""}
+                {showPinnedOnly && " (pinned)"}
+              </span>
+            </div>
+          )}
 
-          {/* Clear Filters */}
-          {(search || showPinnedOnly) && (
-            <button
-              onClick={() => {
-                setSearch("");
-                setShowPinnedOnly(false);
-              }}
-              className="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-200 bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
-            >
-              Clear
-            </button>
+          {loading ? (
+            <Loader />
+          ) : error ? (
+            <div className="glass rounded-2xl p-8 text-center">
+              <p className="text-red-400 mb-4">{error}</p>
+              <button
+                onClick={loadNotes}
+                className="px-4 py-2 rounded-xl text-sm font-medium bg-teal-600 text-white hover:bg-teal-500 transition-colors"
+              >
+                Retry
+              </button>
+            </div>
+          ) : displayedNotes.length === 0 ? (
+            <EmptyState
+              title={search || tagSearch || showPinnedOnly || selectedCategory !== defaultNoteCategory ? "No matches found" : "No Notes Yet"}
+              message={
+                search || tagSearch || showPinnedOnly || selectedCategory !== defaultNoteCategory
+                  ? "Try adjusting category, tag, or search filters."
+                  : "Click the 'Add Note' button to start capturing your key points!"
+              }
+            />
+          ) : (
+            <div className="flex flex-col gap-2.5">
+              {displayedNotes.map((note) => (
+                <NoteCard
+                  key={note._id}
+                  note={note}
+                  onTogglePin={handleTogglePin}
+                  onClick={(note) => setSelectedNote(note)}
+                />
+              ))}
+            </div>
           )}
         </div>
       </div>
-
-      {/* Stats */}
-      {!loading && !error && (
-        <div className="flex items-center gap-4 mb-6">
-          <span className="text-sm text-slate-500">
-            {displayedNotes.length} note{displayedNotes.length !== 1 ? "s" : ""}
-            {showPinnedOnly && " (pinned)"}
-          </span>
-        </div>
-      )}
-
-      {/* Content */}
-      {loading ? (
-        <Loader />
-      ) : error ? (
-        <div className="glass rounded-2xl p-8 text-center">
-          <p className="text-red-400 mb-4">{error}</p>
-          <button
-            onClick={loadNotes}
-            className="px-4 py-2 rounded-xl text-sm font-medium bg-teal-600 text-white hover:bg-teal-500 transition-colors"
-          >
-            Retry
-          </button>
-        </div>
-      ) : displayedNotes.length === 0 ? (
-        <EmptyState
-          title={search || showPinnedOnly ? "No matches found" : "No Notes Yet"}
-          message={
-            search || showPinnedOnly
-              ? "Try adjusting your search or filters."
-              : "Click the 'Add Note' button to start capturing your key points!"
-          }
-        />
-      ) : (
-        <div className="flex flex-col gap-2.5">
-          {displayedNotes.map((note) => (
-            <NoteCard
-              key={note._id}
-              note={note}
-              onTogglePin={handleTogglePin}
-              onClick={(note) => setSelectedNote(note)}
-            />
-          ))}
-        </div>
-      )}
       {/* Note Preview Modal */}
       {selectedNote && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">

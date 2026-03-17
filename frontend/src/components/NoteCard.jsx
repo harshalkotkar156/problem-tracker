@@ -78,7 +78,10 @@ function NoteCard({ note, onTogglePin, onClick }) {
         </div>
 
         {/* Markdown indicator */}
-        <div className="hidden sm:flex items-center flex-shrink-0">
+        <div className="hidden sm:flex items-center flex-shrink-0 gap-1.5">
+          <span className="px-2 py-1 text-[11px] font-medium rounded-md bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
+            {note.category || "DSA"}
+          </span>
           <span className="px-2 py-1 text-[11px] font-medium rounded-md bg-slate-500/10 text-slate-400 border border-slate-500/20">
             MD
           </span>
