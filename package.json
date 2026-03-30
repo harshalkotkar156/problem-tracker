@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Full-stack MERN Problem Tracker",
   "scripts": {
-    
+    "start" : "cd backend && node start",
     "dev": "npm run server",
     "server": "cd backend && npm run dev"
   },
