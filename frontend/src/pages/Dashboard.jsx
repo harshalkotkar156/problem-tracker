@@ -108,8 +108,8 @@ function Dashboard() {
   return (
     <div>
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-100 mb-2">Dashboard</h1>
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-100 mb-2">Dashboard</h1>
         <p className="text-slate-400">
           Track and manage your problem-solving journey
         </p>
@@ -146,7 +146,7 @@ function Dashboard() {
           <select
             value={topicFilter}
             onChange={(e) => setTopicFilter(e.target.value)}
-            className="px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/25 transition-colors appearance-none cursor-pointer min-w-[180px]"
+            className="w-full sm:w-auto px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/25 transition-colors appearance-none cursor-pointer sm:min-w-[180px]"
           >
             <option value="" className="bg-slate-800">
               All Topics
@@ -161,7 +161,7 @@ function Dashboard() {
           {/* Important Toggle */}
           <button
             onClick={() => setShowImportantOnly(!showImportantOnly)}
-            className={`px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2 border transition-colors ${
+            className={`w-full sm:w-auto px-4 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-2 border transition-colors ${
               showImportantOnly
                 ? "bg-amber-500/15 border-amber-500/30 text-amber-400"
                 : "bg-white/5 border-white/10 text-slate-400 hover:text-slate-200 hover:bg-white/10"
@@ -181,7 +181,7 @@ function Dashboard() {
                 setTopicFilter("");
                 setShowImportantOnly(false);
               }}
-              className="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-200 bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-200 bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
             >
               Clear
             </button>
@@ -267,24 +267,24 @@ function Dashboard() {
 
       {/* Problem Preview Modal */}
       {selectedProblem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2 sm:p-4">
           {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setSelectedProblem(null)}
           />
           {/* Modal */}
-          <div className="relative glass rounded-2xl w-full max-w-3xl max-h-[85vh] shadow-2xl shadow-violet-500/10 flex flex-col">
+          <div className="relative glass rounded-2xl w-full max-w-3xl max-h-[92vh] sm:max-h-[85vh] shadow-2xl shadow-violet-500/10 flex flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between p-5 border-b border-white/10 flex-shrink-0">
-              <div className="flex-1 min-w-0 mr-4">
-                <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 sm:p-5 border-b border-white/10 flex-shrink-0">
+              <div className="flex-1 min-w-0 sm:mr-4">
+                <div className="flex items-center gap-2 sm:gap-3">
                   {selectedProblem.number && (
                     <span className="text-xs font-mono text-violet-400/80 bg-violet-500/10 px-2 py-1 rounded-lg flex-shrink-0">
                       #{selectedProblem.number}
                     </span>
                   )}
-                  <h2 className="text-lg font-semibold text-slate-100 truncate">
+                  <h2 className="text-base sm:text-lg font-semibold text-slate-100 truncate">
                     {selectedProblem.name}
                   </h2>
                   {selectedProblem.isImportant && (
@@ -306,14 +306,14 @@ function Dashboard() {
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto">
                 <button
                   onClick={() => {
                     const id = selectedProblem._id;
                     setSelectedProblem(null);
                     navigate(`/problem/${id}`);
                   }}
-                  className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-violet-300 bg-violet-500/15 hover:bg-violet-500/25 border border-violet-500/20 transition-colors"
+                  className="flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-xs font-medium text-violet-300 bg-violet-500/15 hover:bg-violet-500/25 border border-violet-500/20 transition-colors"
                 >
                   Edit
                 </button>
@@ -328,7 +328,7 @@ function Dashboard() {
               </div>
             </div>
             {/* Body - scrollable */}
-            <div className="p-6 overflow-y-auto flex-1 space-y-6">
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-5 sm:space-y-6">
               {/* Links */}
               {(selectedProblem.leetcodeLink || selectedProblem.gfgLink) && (
                 <div className="flex flex-wrap gap-2">

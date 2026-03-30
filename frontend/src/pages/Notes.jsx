@@ -86,8 +86,8 @@ function Notes() {
   return (
     <div>
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-100 mb-2">Notes</h1>
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-100 mb-2">Notes</h1>
         <p className="text-slate-400">
           Save key points and concepts in Markdown
         </p>
@@ -166,7 +166,7 @@ function Notes() {
             <div className="flex flex-col sm:flex-row gap-3">
               <button
                 onClick={() => setShowPinnedOnly(!showPinnedOnly)}
-                className={`px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2 border transition-colors ${
+                className={`w-full sm:w-auto px-4 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-2 border transition-colors ${
                   showPinnedOnly
                     ? "bg-teal-500/15 border-teal-500/30 text-teal-400"
                     : "bg-white/5 border-white/10 text-slate-400 hover:text-slate-200 hover:bg-white/10"
@@ -186,7 +186,7 @@ function Notes() {
                     setShowPinnedOnly(false);
                     setSelectedCategory(defaultNoteCategory);
                   }}
-                  className="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-200 bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-200 bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
                 >
                   Reset Filters
                 </button>
@@ -241,18 +241,18 @@ function Notes() {
       </div>
       {/* Note Preview Modal */}
       {selectedNote && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2 sm:p-4">
           {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setSelectedNote(null)}
           />
           {/* Modal */}
-          <div className="relative glass rounded-2xl w-full max-w-3xl max-h-[85vh] shadow-2xl shadow-violet-500/10 flex flex-col">
+          <div className="relative glass rounded-2xl w-full max-w-3xl max-h-[92vh] sm:max-h-[85vh] shadow-2xl shadow-violet-500/10 flex flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between p-5 border-b border-white/10 flex-shrink-0">
-              <div className="flex-1 min-w-0 mr-4">
-                <h2 className="text-lg font-semibold text-slate-100 truncate">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 sm:p-5 border-b border-white/10 flex-shrink-0">
+              <div className="flex-1 min-w-0 sm:mr-4">
+                <h2 className="text-base sm:text-lg font-semibold text-slate-100 truncate">
                   {selectedNote.title}
                 </h2>
                 {selectedNote.tags && selectedNote.tags.length > 0 && (
@@ -268,13 +268,13 @@ function Notes() {
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto">
                 <button
                   onClick={() => {
                     setSelectedNote(null);
                     navigate(`/note/${selectedNote._id}`);
                   }}
-                  className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-teal-300 bg-teal-500/15 hover:bg-teal-500/25 border border-teal-500/20 transition-colors"
+                  className="flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-xs font-medium text-teal-300 bg-teal-500/15 hover:bg-teal-500/25 border border-teal-500/20 transition-colors"
                 >
                   Edit
                 </button>
@@ -289,7 +289,7 @@ function Notes() {
               </div>
             </div>
             {/* Body - scrollable */}
-            <div className="p-6 overflow-y-auto flex-1">
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1">
               <div className="markdown-preview">
                 {selectedNote.content ? (
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>

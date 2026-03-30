@@ -22,10 +22,10 @@ function NoteCard({ note, onTogglePin, onClick }) {
 
   return (
     <div
-      className="glass glass-hover rounded-2xl p-4 transition-all duration-300 group hover:shadow-lg hover:shadow-teal-500/10 cursor-pointer"
+      className="glass glass-hover rounded-2xl p-3 sm:p-4 transition-all duration-300 group hover:shadow-lg hover:shadow-teal-500/10 cursor-pointer"
       onClick={() => onClick?.(note)}
     >
-      <div className="flex items-start gap-4">
+      <div className="flex items-start gap-2 sm:gap-4">
         {/* Pin Button */}
         <button
           onClick={(e) => {
@@ -78,7 +78,7 @@ function NoteCard({ note, onTogglePin, onClick }) {
         </div>
 
         {/* Markdown indicator */}
-        <div className="hidden sm:flex items-center flex-shrink-0 gap-1.5">
+        <div className="hidden md:flex items-center flex-shrink-0 gap-1.5">
           <span className="px-2 py-1 text-[11px] font-medium rounded-md bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
             {note.category || "DSA"}
           </span>
@@ -93,7 +93,7 @@ function NoteCard({ note, onTogglePin, onClick }) {
         </span>
 
         {/* Arrow */}
-        <div className="flex-shrink-0">
+        <div className="hidden sm:flex flex-shrink-0">
           <svg
             className="w-4 h-4 text-slate-600 group-hover:text-teal-400 transition-colors"
             fill="none"

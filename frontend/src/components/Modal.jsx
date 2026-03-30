@@ -18,17 +18,17 @@ function Modal({ isOpen, onClose, title, children }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2 sm:p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
       {/* Modal */}
-      <div className="relative glass rounded-2xl w-full max-w-lg max-h-[80vh] overflow-y-auto shadow-2xl shadow-violet-500/10 animate-in">
+      <div className="relative glass rounded-2xl w-full max-w-lg max-h-[90vh] sm:max-h-[80vh] overflow-y-auto shadow-2xl shadow-violet-500/10 animate-in">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-white/10">
-          <h2 className="text-lg font-semibold text-slate-100">{title}</h2>
+        <div className="flex items-center justify-between gap-3 p-4 sm:p-5 border-b border-white/10">
+          <h2 className="text-base sm:text-lg font-semibold text-slate-100 truncate">{title}</h2>
           <button
             onClick={onClose}
             className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-200 hover:bg-white/10 transition-colors"
@@ -49,7 +49,7 @@ function Modal({ isOpen, onClose, title, children }) {
           </button>
         </div>
         {/* Body */}
-        <div className="p-5">{children}</div>
+        <div className="p-4 sm:p-5">{children}</div>
       </div>
     </div>
   );

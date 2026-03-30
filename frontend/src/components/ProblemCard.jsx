@@ -6,10 +6,10 @@ function ProblemCard({ problem, onToggleImportant, onOpenNotes, onClick }) {
 
   return (
     <div
-      className="glass glass-hover rounded-2xl p-4 transition-all duration-300 group hover:shadow-lg hover:shadow-violet-500/10 cursor-pointer"
+      className="glass glass-hover rounded-2xl p-3 sm:p-4 transition-all duration-300 group hover:shadow-lg hover:shadow-violet-500/10 cursor-pointer"
       onClick={() => onClick?.(problem)}
     >
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4">
         {/* Important Star */}
         <button
           onClick={(e) => {
@@ -32,7 +32,7 @@ function ProblemCard({ problem, onToggleImportant, onOpenNotes, onClick }) {
         </button>
 
         {/* Problem Number */}
-        <div className="flex-shrink-0 w-14 text-center">
+        <div className="flex-shrink-0 w-12 sm:w-14 text-center">
           {problem.number ? (
             <span className="text-xs font-mono text-violet-400/80 bg-violet-500/10 px-2 py-1 rounded-lg">
               #{problem.number}
@@ -124,7 +124,7 @@ function ProblemCard({ problem, onToggleImportant, onOpenNotes, onClick }) {
         </span>
 
         {/* Arrow */}
-        <div className="flex-shrink-0">
+        <div className="hidden sm:flex flex-shrink-0">
           <svg
             className="w-4 h-4 text-slate-600 group-hover:text-violet-400 transition-colors"
             fill="none" stroke="currentColor" viewBox="0 0 24 24"
