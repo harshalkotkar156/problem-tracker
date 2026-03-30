@@ -18,7 +18,12 @@ app.use(express.json());
 // API Routes
 app.use("/api/problems", require("./routes/problemRoutes"));
 app.use("/api/notes", require("./routes/noteRoutes"));
-
+app.use("/api/health", (req,res) => {
+  return res.status(200).json({
+      success:true,
+      message : "Server is working"
+  });
+})
 // ---------- Production: Serve Frontend Static Files ----------
 // if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../frontend/dist")));
