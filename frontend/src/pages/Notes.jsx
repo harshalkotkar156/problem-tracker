@@ -10,6 +10,7 @@ import EmptyState from "../components/EmptyState";
 import { noteCategories, defaultNoteCategory } from "../data/noteCategories";
 
 function Notes() {
+  const ITEMS_PER_PAGE = 20;
   const navigate = useNavigate();
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,6 +22,7 @@ function Notes() {
   const [debouncedTagSearch, setDebouncedTagSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(defaultNoteCategory);
   const [selectedNote, setSelectedNote] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Close modal on Escape key & lock body scroll
   useEffect(() => {
@@ -82,6 +84,23 @@ function Notes() {
   const displayedNotes = showPinnedOnly
     ? notes.filter((n) => n.isPinned)
     : notes;
+
+  const totalPages = Math.max(1, Math.ceil(displayedNotes.length / ITEMS_PER_PAGE));
+
+  const paginatedNotes = displayedNotes.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, debouncedTagSearch, selectedCategory, showPinnedOnly]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   return (
     <div>
@@ -195,12 +214,35 @@ function Notes() {
           </div>
 
           {!loading && !error && (
-            <div className="flex items-center gap-4 mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
               <span className="text-sm text-slate-500">
                 {displayedNotes.length} note{displayedNotes.length !== 1 ? "s" : ""}
                 {selectedCategory !== "ALL" ? ` in ${selectedCategory}` : ""}
                 {showPinnedOnly && " (pinned)"}
               </span>
+              {displayedNotes.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-500 mr-1">
+                    Page {currentPage} / {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 bg-white/5 hover:bg-white/10 border border-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                    }
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium text-white bg-teal-600 hover:bg-teal-500 border border-teal-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Next Page
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -227,7 +269,7 @@ function Notes() {
             />
           ) : (
             <div className="flex flex-col gap-2.5">
-              {displayedNotes.map((note) => (
+              {paginatedNotes.map((note) => (
                 <NoteCard
                   key={note._id}
                   note={note}

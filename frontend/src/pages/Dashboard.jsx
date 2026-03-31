@@ -11,6 +11,7 @@ import Loader from "../components/Loader";
 import EmptyState from "../components/EmptyState";
 
 function Dashboard() {
+  const ITEMS_PER_PAGE = 20;
   const navigate = useNavigate();
   const [problems, setProblems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -24,6 +25,7 @@ function Dashboard() {
   const [tempNotes, setTempNotes] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
   const [selectedProblem, setSelectedProblem] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Close preview modal on Escape key & lock body scroll
   useEffect(() => {
@@ -104,6 +106,26 @@ function Dashboard() {
   const displayedProblems = showImportantOnly
     ? problems.filter((p) => p.isImportant)
     : problems;
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(displayedProblems.length / ITEMS_PER_PAGE)
+  );
+
+  const paginatedProblems = displayedProblems.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, topicFilter, showImportantOnly]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   return (
     <div>
@@ -191,11 +213,34 @@ function Dashboard() {
 
       {/* Stats */}
       {!loading && !error && (
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
           <span className="text-sm text-slate-500">
             {displayedProblems.length} problem{displayedProblems.length !== 1 ? "s" : ""}
             {showImportantOnly && " (important)"}
           </span>
+          {displayedProblems.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-500 mr-1">
+                Page {currentPage} / {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 bg-white/5 hover:bg-white/10 border border-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium text-white bg-violet-600 hover:bg-violet-500 border border-violet-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                Next Page
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -223,7 +268,7 @@ function Dashboard() {
         />
       ) : (
         <div className="flex flex-col gap-2.5">
-          {displayedProblems.map((problem) => (
+          {paginatedProblems.map((problem) => (
             <ProblemCard
               key={problem._id}
               problem={problem}

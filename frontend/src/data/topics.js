@@ -28,4 +28,5 @@ export const topics = [
   "Simulation",
   "Design",
   "Moore Algorithm",
+  "DSU",
 ];
