@@ -80,7 +80,7 @@ const updateProblem = async (req, res) => {
         });
       }
     }
-
+    
     const problem = await Problem.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,

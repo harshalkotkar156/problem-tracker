@@ -102,7 +102,7 @@ function AddProblem() {
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} noValidate>
         <div className="glass rounded-2xl p-4 sm:p-6 space-y-5">
           {/* Name & Number */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import ReactMarkdown from "react-markdown";
@@ -20,6 +20,15 @@ function NoteDetail() {
   const [error, setError] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [activeTab, setActiveTab] = useState("write"); // "write" | "preview"
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [saveStatus, setSaveStatus] = useState("saved");
+  const [lastSavedAt, setLastSavedAt] = useState(null);
+
+  const debounceTimerRef = useRef(null);
+  const intervalTimerRef = useRef(null);
+  const formRef = useRef(null);
+  const hasUnsavedChangesRef = useRef(false);
+  const isSavingRef = useRef(false);
 
   const loadNote = useCallback(async () => {
     try {
@@ -34,6 +43,9 @@ function NoteDetail() {
         content: data.content || "",
         isPinned: data.isPinned || false,
       });
+      setHasUnsavedChanges(false);
+      setSaveStatus("saved");
+      setLastSavedAt(null);
     } catch (err) {
       const msg = err.response?.data?.message || "Failed to load note";
       setError(msg);
@@ -47,12 +59,121 @@ function NoteDetail() {
     loadNote();
   }, [loadNote]);
 
+  useEffect(() => {
+    formRef.current = form;
+  }, [form]);
+
+  useEffect(() => {
+    hasUnsavedChangesRef.current = hasUnsavedChanges;
+  }, [hasUnsavedChanges]);
+
+  const markUnsavedChanges = useCallback(() => {
+    setHasUnsavedChanges(true);
+    setSaveStatus("unsaved");
+  }, []);
+
+  const saveWithRetry = useCallback(async (payload) => {
+    let lastError;
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        return await updateNote(id, payload);
+      } catch (err) {
+        lastError = err;
+        if (attempt === 0) {
+          await new Promise((resolve) => setTimeout(resolve, 800));
+        }
+      }
+    }
+    throw lastError;
+  }, [id]);
+
+  const runSave = useCallback(async (source = "manual") => {
+    if (!formRef.current || isSavingRef.current) {
+      return false;
+    }
+
+    if (!hasUnsavedChangesRef.current) {
+      if (source === "manual") {
+        toast.success("All changes are already saved");
+      }
+      if (source === "shortcut") {
+        toast.success("No new changes to save");
+      }
+      return false;
+    }
+
+    if (!formRef.current.title?.trim()) {
+      setSaveStatus("unsaved");
+      if (source === "manual" || source === "shortcut") {
+        toast.error("Note title is required");
+      }
+      return false;
+    }
+
+    try {
+      isSavingRef.current = true;
+      setSaving(true);
+      setSaveStatus("saving");
+
+      const updated = await saveWithRetry(formRef.current);
+      setNote(updated);
+      setForm((prev) => (prev ? { ...prev, ...updated } : prev));
+      setHasUnsavedChanges(false);
+      setSaveStatus("saved");
+      setLastSavedAt(new Date());
+
+      if (source === "manual") {
+        toast.success("Saved successfully!");
+      }
+
+      if (source === "shortcut") {
+        toast.success("Saved via keyboard shortcut");
+      }
+
+      if (source === "debounce" || source === "interval") {
+        toast.success("Auto-saved successfully!");
+      }
+
+      return true;
+    } catch (err) {
+      setSaveStatus("error");
+      toast.error(err.response?.data?.message || "Failed to save");
+      return false;
+    } finally {
+      isSavingRef.current = false;
+      setSaving(false);
+    }
+  }, [saveWithRetry]);
+
+  const scheduleDebouncedAutoSave = useCallback(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      runSave("debounce");
+    }, 10000);
+  }, [runSave]);
+
   const handleChange = (e) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+    if (!form || form[name] === value) return;
+
+    setForm((prev) => ({ ...prev, [name]: value }));
+    markUnsavedChanges();
+    scheduleDebouncedAutoSave();
   };
 
   const handleTagsChange = (newTags) => {
+    if (!form) return;
+    const prevTags = form.tags || [];
+    const sameLength = prevTags.length === newTags.length;
+    const sameValues = sameLength && prevTags.every((tag, idx) => tag === newTags[idx]);
+    if (sameValues) return;
+
     setForm((prev) => ({ ...prev, tags: newTags }));
+    markUnsavedChanges();
+    scheduleDebouncedAutoSave();
   };
 
   const handleContentKeyDown = (e) => {
@@ -69,6 +190,8 @@ function NoteDetail() {
         const after = value.slice(selectionStart);
         const newValue = before + after;
         setForm((prev) => ({ ...prev, content: newValue }));
+        markUnsavedChanges();
+        scheduleDebouncedAutoSave();
         setTimeout(() => {
           textarea.selectionStart = textarea.selectionEnd = currentLineStart;
         }, 0);
@@ -79,6 +202,8 @@ function NoteDetail() {
         const after = value.slice(selectionStart);
         const newValue = before + "\n- " + after;
         setForm((prev) => ({ ...prev, content: newValue }));
+        markUnsavedChanges();
+        scheduleDebouncedAutoSave();
         setTimeout(() => {
           textarea.selectionStart = textarea.selectionEnd = selectionStart + 3;
         }, 0);
@@ -87,21 +212,51 @@ function NoteDetail() {
   };
 
   const handleSave = async () => {
-    if (!form.title.trim()) {
-      toast.error("Note title is required");
-      return;
-    }
-    try {
-      setSaving(true);
-      const updated = await updateNote(id, form);
-      setNote(updated);
-      toast.success("Saved successfully!");
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to save");
-    } finally {
-      setSaving(false);
-    }
+    await runSave("manual");
   };
+
+  useEffect(() => {
+    if (!form) return;
+
+    if (intervalTimerRef.current) {
+      clearInterval(intervalTimerRef.current);
+    }
+
+    intervalTimerRef.current = setInterval(() => {
+      runSave("interval");
+    }, 30000);
+
+    return () => {
+      if (intervalTimerRef.current) {
+        clearInterval(intervalTimerRef.current);
+      }
+    };
+  }, [Boolean(form), runSave]);
+
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        runSave("shortcut");
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [runSave]);
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      if (intervalTimerRef.current) {
+        clearInterval(intervalTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleDelete = async () => {
     try {
@@ -130,6 +285,19 @@ function NoteDetail() {
   }
 
   if (!form) return null;
+
+  const saveStatusLabel = (() => {
+    if (saveStatus === "saving") return "Saving...";
+    if (saveStatus === "error") return "Save failed. Will retry on next change/interval.";
+    if (hasUnsavedChanges) return "Unsaved changes";
+    if (lastSavedAt) {
+      return `Saved at ${lastSavedAt.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })}`;
+    }
+    return "All changes saved";
+  })();
 
   const formattedDate = note
     ? new Date(note.createdAt).toLocaleDateString("en-US", {
@@ -234,9 +402,11 @@ function NoteDetail() {
         <div>
           <button
             type="button"
-            onClick={() =>
-              setForm((prev) => ({ ...prev, isPinned: !prev.isPinned }))
-            }
+            onClick={() => {
+              setForm((prev) => ({ ...prev, isPinned: !prev.isPinned }));
+              markUnsavedChanges();
+              scheduleDebouncedAutoSave();
+            }}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-colors ${
               form.isPinned
                 ? "bg-teal-500/15 border-teal-500/30 text-teal-400"
@@ -325,46 +495,61 @@ function NoteDetail() {
         </div>
 
         {/* Actions */}
-        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-4 border-t border-white/10">
-          <button
-            type="button"
-            onClick={() => navigate("/notes")}
-            className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-sm font-medium text-slate-300 bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-4 border-t border-white/10">
+          <p
+            className={`text-xs ${
+              saveStatus === "error"
+                ? "text-red-400"
+                : saveStatus === "saving"
+                ? "text-teal-300"
+                : hasUnsavedChanges
+                ? "text-amber-300"
+                : "text-emerald-300"
+            }`}
           >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-sm font-medium text-white bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 shadow-lg shadow-teal-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-          >
-            {saving ? (
-              <span className="flex items-center gap-2">
-                <svg
-                  className="animate-spin w-4 h-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                  />
-                </svg>
-                Saving...
-              </span>
-            ) : (
-              "Save Changes"
-            )}
-          </button>
+            {saveStatusLabel}
+          </p>
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-3">
+            <button
+              type="button"
+              onClick={() => navigate("/notes")}
+              className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-sm font-medium text-slate-300 bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-sm font-medium text-white bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 shadow-lg shadow-teal-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              {saving ? (
+                <span className="flex items-center gap-2">
+                  <svg
+                    className="animate-spin w-4 h-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                    />
+                  </svg>
+                  Saving...
+                </span>
+              ) : (
+                "Save Changes"
+              )}
+            </button>
+          </div>
         </div>
       </div>
 

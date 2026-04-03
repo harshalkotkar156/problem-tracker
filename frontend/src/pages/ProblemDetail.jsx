@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import {
@@ -24,6 +24,15 @@ function ProblemDetail() {
   const [notesModal, setNotesModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [tempNotes, setTempNotes] = useState("");
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [saveStatus, setSaveStatus] = useState("saved");
+  const [lastSavedAt, setLastSavedAt] = useState(null);
+
+  const debounceTimerRef = useRef(null);
+  const intervalTimerRef = useRef(null);
+  const formRef = useRef(null);
+  const hasUnsavedChangesRef = useRef(false);
+  const isSavingRef = useRef(false);
 
   const loadProblem = useCallback(async () => {
     try {
@@ -45,6 +54,9 @@ function ProblemDetail() {
         isImportant: data.isImportant || false,
         code: data.code || "",
       });
+      setHasUnsavedChanges(false);
+      setSaveStatus("saved");
+      setLastSavedAt(null);
     } catch (err) {
       const msg = err.response?.data?.message || "Failed to load problem";
       setError(msg);
@@ -58,6 +70,94 @@ function ProblemDetail() {
     loadProblem();
   }, [loadProblem]);
 
+  useEffect(() => {
+    formRef.current = form;
+  }, [form]);
+
+  useEffect(() => {
+    hasUnsavedChangesRef.current = hasUnsavedChanges;
+  }, [hasUnsavedChanges]);
+
+  const markUnsavedChanges = useCallback(() => {
+    setHasUnsavedChanges(true);
+    setSaveStatus("unsaved");
+  }, []);
+
+  const saveWithRetry = useCallback(async (payload) => {
+    let lastError;
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        return await updateProblem(id, payload);
+      } catch (err) {
+        lastError = err;
+        if (attempt === 0) {
+          await new Promise((resolve) => setTimeout(resolve, 800));
+        }
+      }
+    }
+    throw lastError;
+  }, [id]);
+
+  const runSave = useCallback(async (source = "manual") => {
+    if (!formRef.current || isSavingRef.current) {
+      return false;
+    }
+
+    if (!hasUnsavedChangesRef.current) {
+      if (source === "manual") {
+        toast.success("All changes are already saved");
+      }
+      if (source === "shortcut") {
+        toast.success("No new changes to save");
+      }
+      return false;
+    }
+
+    try {
+      isSavingRef.current = true;
+      setSaving(true);
+      setSaveStatus("saving");
+
+      const updated = await saveWithRetry(formRef.current);
+      setProblem(updated);
+      setForm((prev) => (prev ? { ...prev, ...updated } : prev));
+      setHasUnsavedChanges(false);
+      setSaveStatus("saved");
+      setLastSavedAt(new Date());
+
+      if (source === "manual") {
+        toast.success("Saved successfully!");
+      }
+
+      if (source === "shortcut") {
+        toast.success("Saved via keyboard shortcut");
+      }
+
+      if (source === "debounce" || source === "interval") {
+        toast.success("Auto-saved successfully!");
+      }
+
+      return true;
+    } catch (err) {
+      setSaveStatus("error");
+      toast.error(err.response?.data?.message || "Failed to save");
+      return false;
+    } finally {
+      isSavingRef.current = false;
+      setSaving(false);
+    }
+  }, [saveWithRetry]);
+
+  const scheduleDebouncedAutoSave = useCallback(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      runSave("debounce");
+    }, 10000);
+  }, [runSave]);
+
   const autoResize = useCallback((el) => {
     if (el) {
       el.style.height = "auto";
@@ -66,14 +166,28 @@ function ProblemDetail() {
   }, []);
 
   const handleChange = (e) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+    if (!form || form[name] === value) return;
+
+    setForm((prev) => ({ ...prev, [name]: value }));
+    markUnsavedChanges();
+    scheduleDebouncedAutoSave();
+
     if (e.target.tagName === "TEXTAREA") {
       autoResize(e.target);
     }
   };
 
   const handleTopicsChange = (newTopics) => {
+    if (!form) return;
+    const prevTopics = form.topics || [];
+    const sameLength = prevTopics.length === newTopics.length;
+    const sameValues = sameLength && prevTopics.every((topic, idx) => topic === newTopics[idx]);
+    if (sameValues) return;
+
     setForm((prev) => ({ ...prev, topics: newTopics }));
+    markUnsavedChanges();
+    scheduleDebouncedAutoSave();
   };
 
   const handleBulletKeyDown = (e) => {
@@ -89,6 +203,8 @@ function ProblemDetail() {
         const after = value.slice(selectionStart);
         const newValue = before + after;
         setForm((prev) => ({ ...prev, [textarea.name]: newValue }));
+        markUnsavedChanges();
+        scheduleDebouncedAutoSave();
         setTimeout(() => {
           textarea.selectionStart = textarea.selectionEnd = currentLineStart;
         }, 0);
@@ -98,6 +214,8 @@ function ProblemDetail() {
         const after = value.slice(selectionStart);
         const newValue = before + "\n- " + after;
         setForm((prev) => ({ ...prev, [textarea.name]: newValue }));
+        markUnsavedChanges();
+        scheduleDebouncedAutoSave();
         setTimeout(() => {
           textarea.selectionStart = textarea.selectionEnd = selectionStart + 3;
         }, 0);
@@ -106,20 +224,12 @@ function ProblemDetail() {
   };
 
   const handleSave = async () => {
-    if (!form.name.trim()) {
+    if (!form?.name.trim()) {
       toast.error("Problem name is required");
       return;
     }
-    try {
-      setSaving(true);
-      const updated = await updateProblem(id, form);
-      setProblem(updated);
-      toast.success("Saved successfully!");
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to save");
-    } finally {
-      setSaving(false);
-    }
+
+    await runSave("manual");
   };
 
   const handleDelete = async () => {
@@ -138,9 +248,59 @@ function ProblemDetail() {
   };
 
   const saveNotes = () => {
-    setForm((prev) => ({ ...prev, notes: tempNotes }));
+    setForm((prev) => {
+      if (!prev || prev.notes === tempNotes) return prev;
+      return { ...prev, notes: tempNotes };
+    });
+    if (form?.notes !== tempNotes) {
+      markUnsavedChanges();
+      scheduleDebouncedAutoSave();
+    }
     setNotesModal(false);
   };
+
+  useEffect(() => {
+    if (!form) return;
+
+    if (intervalTimerRef.current) {
+      clearInterval(intervalTimerRef.current);
+    }
+
+    intervalTimerRef.current = setInterval(() => {
+      runSave("interval");
+    }, 30000);
+
+    return () => {
+      if (intervalTimerRef.current) {
+        clearInterval(intervalTimerRef.current);
+      }
+    };
+  }, [Boolean(form), runSave]);
+
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        runSave("shortcut");
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [runSave]);
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      if (intervalTimerRef.current) {
+        clearInterval(intervalTimerRef.current);
+      }
+    };
+  }, []);
 
   if (loading) return <Loader />;
 
@@ -159,6 +319,19 @@ function ProblemDetail() {
   }
 
   if (!form) return null;
+
+  const saveStatusLabel = (() => {
+    if (saveStatus === "saving") return "Saving...";
+    if (saveStatus === "error") return "Save failed. Will retry on next change/interval.";
+    if (hasUnsavedChanges) return "Unsaved changes";
+    if (lastSavedAt) {
+      return `Saved at ${lastSavedAt.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })}`;
+    }
+    return "All changes saved";
+  })();
 
   const formattedDate = problem
     ? new Date(problem.createdAt).toLocaleDateString("en-US", {
@@ -295,7 +468,11 @@ function ProblemDetail() {
         <div>
           <button
             type="button"
-            onClick={() => setForm((prev) => ({ ...prev, isImportant: !prev.isImportant }))}
+            onClick={() => {
+              setForm((prev) => ({ ...prev, isImportant: !prev.isImportant }));
+              markUnsavedChanges();
+              scheduleDebouncedAutoSave();
+            }}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-colors ${
               form.isImportant
                 ? "bg-amber-500/15 border-amber-500/30 text-amber-400"
@@ -447,7 +624,21 @@ function ProblemDetail() {
         </div>
 
         {/* Actions */}
-        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-4 border-t border-white/10">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-4 border-t border-white/10">
+          <p
+            className={`text-xs ${
+              saveStatus === "error"
+                ? "text-red-400"
+                : saveStatus === "saving"
+                ? "text-violet-300"
+                : hasUnsavedChanges
+                ? "text-amber-300"
+                : "text-emerald-300"
+            }`}
+          >
+            {saveStatusLabel}
+          </p>
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-3">
           <button
             type="button"
             onClick={() => navigate("/")}
@@ -487,6 +678,7 @@ function ProblemDetail() {
               "Save Changes"
             )}
           </button>
+          </div>
         </div>
       </div>
 
@@ -494,7 +686,12 @@ function ProblemDetail() {
       <Modal
         isOpen={notesModal}
         onClose={() => {
-          setForm((prev) => ({ ...prev, notes: tempNotes }));
+          setForm((prev) => {
+            if (!prev || prev.notes === tempNotes) return prev;
+            markUnsavedChanges();
+            scheduleDebouncedAutoSave();
+            return { ...prev, notes: tempNotes };
+          });
           setNotesModal(false);
         }}
         title="Edit Notes"
